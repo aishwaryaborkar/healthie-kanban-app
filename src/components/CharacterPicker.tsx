@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { CharactersState } from '../hooks/useCharacters';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 type Props = {
   state: CharactersState;
@@ -11,21 +11,80 @@ type Props = {
   onLoadMore: () => void;
 };
 
-// Radio list of characters, 5 at a time. "Show more" reveals 5 more, and asks
-// the API for the next page once we've shown everything already fetched.
+// Native dropdown showing 10 characters at a time. "Show more" adds 10 more,
+// and asks the API for the next page once we've shown everything already fetched.
+// (A typeahead combobox would be the better long-term UX; see README.)
 export function CharacterPicker({ state, selectedId, onSelect, onRetry, onLoadMore }: Props) {
   // How many to show is purely this component's concern, so it lives here.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  return (
-    <fieldset className="field character-field">
-      <legend>
-        Assigned character <span className="required" aria-hidden="true">*</span>
-      </legend>
+  const characters = state.status === 'success' ? state.characters : [];
+  const visible = characters.slice(0, visibleCount);
+  // Keep the chosen character in the list even if it's past the first 10
+  // (e.g. picked after "Show more", then the modal was closed and reopened).
+  const selected = characters.find((c) => c.id === selectedId);
+  const options = selected && !visible.includes(selected) ? [selected, ...visible] : visible;
 
-      {state.status === 'loading' && (
-        <p className="picker-status" role="status">
-          Loading characters…
+  const canShowMore =
+    state.status === 'success' && (visibleCount < characters.length || state.nextPage !== null);
+
+  function showMore() {
+    const next = Math.min(visibleCount, characters.length) + PAGE_SIZE;
+    if (next > characters.length) onLoadMore();
+    setVisibleCount(next);
+  }
+
+  return (
+    <div className="field">
+      <label htmlFor="character">
+        Assigned character <span className="required" aria-hidden="true">*</span>
+      </label>
+
+      <div className="character-picker">
+        {selected ? (
+          <img src={selected.image} alt="" className="avatar" />
+        ) : (
+          <span className="avatar avatar-empty" aria-hidden="true" />
+        )}
+        <select
+          id="character"
+          value={selectedId}
+          onChange={(e) => onSelect(e.target.value)}
+          disabled={state.status !== 'success'}
+          required
+        >
+          <option value="" disabled>
+            {state.status === 'loading' ? 'Loading characters…' : 'Choose a character'}
+          </option>
+          {options.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {state.status === 'success' && (
+        <div className="picker-footer">
+          <span className="picker-status" aria-live="polite">
+            {options.length} characters in the list
+          </span>
+          {canShowMore && (
+            <button
+              type="button"
+              className="button-subtle show-more"
+              onClick={showMore}
+              disabled={state.isLoadingMore}
+            >
+              {state.isLoadingMore ? 'Loading…' : state.loadMoreError ? 'Try again' : 'Show 10 more'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {state.status === 'success' && state.loadMoreError && (
+        <p className="picker-status picker-error" role="alert">
+          Couldn't load more characters ({state.loadMoreError}).
         </p>
       )}
 
@@ -39,69 +98,6 @@ export function CharacterPicker({ state, selectedId, onSelect, onRetry, onLoadMo
           </button>
         </div>
       )}
-
-      {state.status === 'success' && renderOptions(state)}
-    </fieldset>
+    </div>
   );
-
-  function renderOptions(loaded: Extract<CharactersState, { status: 'success' }>) {
-    const visible = loaded.characters.slice(0, visibleCount);
-    // Keep the chosen character on screen even if it's outside the first few
-    // (e.g. picked from page 2, then the modal was closed and reopened).
-    const selected = loaded.characters.find((c) => c.id === selectedId);
-    const shown = selected && !visible.includes(selected) ? [selected, ...visible] : visible;
-    const canShowMore = visibleCount < loaded.characters.length || loaded.nextPage !== null;
-
-    function showMore() {
-      const next = Math.min(visibleCount, loaded.characters.length) + PAGE_SIZE;
-      if (next > loaded.characters.length) onLoadMore();
-      setVisibleCount(next);
-    }
-
-    return (
-      <>
-        <div className="character-options">
-          {shown.map((c) => (
-            <label key={c.id} className="character-option">
-              <input
-                type="radio"
-                name="character"
-                value={c.id}
-                checked={c.id === selectedId}
-                onChange={() => onSelect(c.id)}
-                required
-              />
-              <img src={c.image} alt="" className="avatar avatar-small" />
-              <span>{c.name}</span>
-            </label>
-          ))}
-        </div>
-
-        <p className="sr-only" aria-live="polite">
-          {shown.length} characters shown
-        </p>
-
-        {loaded.loadMoreError && (
-          <p className="picker-status picker-error" role="alert">
-            Couldn't load more characters ({loaded.loadMoreError}).
-          </p>
-        )}
-
-        {canShowMore && (
-          <button
-            type="button"
-            className="button-subtle show-more"
-            onClick={showMore}
-            disabled={loaded.isLoadingMore}
-          >
-            {loaded.isLoadingMore
-              ? 'Loading…'
-              : loaded.loadMoreError
-                ? 'Try again'
-                : 'Show more characters'}
-          </button>
-        )}
-      </>
-    );
-  }
 }
