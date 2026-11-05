@@ -7,11 +7,14 @@ type Props = {
   isDone: boolean;
 };
 
+// The whole card is the drag handle. The library makes it focusable and adds
+// keyboard dragging (space to lift, arrows to move, space to drop) plus
+// screen-reader instructions and announcements.
 export function Item({ item, index, isDone }: Props) {
   return (
     <Draggable draggableId={item.id} index={index}>
       {(provided, snapshot) => (
-        <li
+        <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
@@ -19,15 +22,12 @@ export function Item({ item, index, isDone }: Props) {
         >
           <h3 className={isDone ? 'card-title is-done' : 'card-title'}>{item.title}</h3>
           {item.description && <p className="card-description">{item.description}</p>}
-          <footer className="card-footer">
+          <div className="card-footer">
             <span className="card-assignee-name">{item.character.name}</span>
-            <img
-              src={item.character.image}
-              alt={`Assigned to ${item.character.name}`}
-              className="avatar avatar-small"
-            />
-          </footer>
-        </li>
+            {/* Decorative: the name is already shown as text right next to it. */}
+            <img src={item.character.image} alt="" className="avatar avatar-small" />
+          </div>
+        </div>
       )}
     </Draggable>
   );

@@ -1,12 +1,14 @@
 import type { FormEvent } from 'react';
 import type { Draft, KanbanItem } from '../types';
 import type { CharactersState } from '../hooks/useCharacters';
+import { CharacterPicker } from './CharacterPicker';
 
 type Props = {
   draft: Draft;
   onDraftChange: (draft: Draft) => void;
   charactersState: CharactersState;
   onRetry: () => void;
+  onLoadMore: () => void;
   onCreate: (item: KanbanItem) => void;
   onCancel: () => void;
 };
@@ -16,6 +18,7 @@ export function CreateItemForm({
   onDraftChange,
   charactersState,
   onRetry,
+  onLoadMore,
   onCreate,
   onCancel,
 }: Props) {
@@ -45,61 +48,29 @@ export function CreateItemForm({
 
   return (
     <form className="create-form" onSubmit={handleSubmit}>
-      <p className="hint">
+      <p className="hint" aria-hidden="true">
         Required fields are marked with <span className="required">*</span>
       </p>
 
       <label className="field">
         <span>
-          Title <span className="required">*</span>
+          Title <span className="required" aria-hidden="true">*</span>
         </span>
         <input value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
       </label>
 
       <label className="field">
         <span>Description</span>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
       </label>
 
-      <label className="field">
-        <span>
-          Assigned character <span className="required">*</span>
-        </span>
-        <div className="character-picker">
-          {character ? (
-            <img src={character.image} alt="" className="avatar" />
-          ) : (
-            <span className="avatar avatar-empty" aria-hidden="true" />
-          )}
-          <select
-            value={characterId}
-            onChange={(e) => setCharacterId(e.target.value)}
-            disabled={charactersState.status !== 'success'}
-            required
-          >
-            <option value="" disabled>
-              {charactersState.status === 'loading' ? 'Loading characters…' : 'Choose a character'}
-            </option>
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </label>
-
-      {charactersState.status === 'error' && (
-        <div className="form-error" role="alert">
-          <span>
-            Characters didn't load ({charactersState.message}). Every item needs one, so retry to
-            continue.
-          </span>
-          <button type="button" className="button-subtle" onClick={onRetry}>
-            Retry
-          </button>
-        </div>
-      )}
+      <CharacterPicker
+        state={charactersState}
+        selectedId={characterId}
+        onSelect={setCharacterId}
+        onRetry={onRetry}
+        onLoadMore={onLoadMore}
+      />
 
       <footer className="form-actions">
         <button type="button" className="button-subtle" onClick={onCancel}>

@@ -23,7 +23,7 @@ export function KanbanBoard() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   // When the last celebration started (null = not celebrating).
   const [celebratedAt, setCelebratedAt] = useState<number | null>(null);
-  const { state: charactersState, retry } = useCharacters();
+  const { state: charactersState, retry, loadMore } = useCharacters();
 
   // Hide the celebration after 2s. A new drop changes celebratedAt, which
   // cancels the old timer (cleanup) and starts a fresh one. Same cleanup runs on unmount.
@@ -64,8 +64,13 @@ export function KanbanBoard() {
           <p className="breadcrumb">Projects / Rick and Morty</p>
           <h1>Kanban board</h1>
         </div>
-        <button type="button" className="button-primary" onClick={() => setIsFormOpen(true)}>
-          + Create
+        <button
+          type="button"
+          className="button-primary"
+          aria-label="Create item"
+          onClick={() => setIsFormOpen(true)}
+        >
+          <span aria-hidden="true">+</span> Create
         </button>
       </header>
 
@@ -94,6 +99,7 @@ export function KanbanBoard() {
             onDraftChange={setDraft}
             charactersState={charactersState}
             onRetry={retry}
+            onLoadMore={loadMore}
             onCreate={addItem}
             onCancel={() => setIsFormOpen(false)}
           />
@@ -101,6 +107,10 @@ export function KanbanBoard() {
       )}
 
       {celebratedAt !== null && <Celebration key={celebratedAt} />}
+      {/* Always rendered so screen readers reliably announce changes to it. */}
+      <p className="sr-only" role="status">
+        {celebratedAt !== null ? 'Moved to Done' : ''}
+      </p>
     </div>
   );
 }
