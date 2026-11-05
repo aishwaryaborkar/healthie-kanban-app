@@ -68,7 +68,7 @@ Not done: an automated axe/Lighthouse check and a screen reader test.
 
 ## How I used AI
 
-I used Claude Code to pressure-test my design decisions, especially where state should live, to research the drag-and-drop library and the celebration graphic, and to speed up writing and checking the code. I used the `frontend-design` skill for the visual design and the `frontend-ui-engineering` skill for the accessibility review.
+I used Claude Code to pressure-test my design decisions, especially where state should live, and to research the drag-and-drop library and the celebration graphic. I used the `frontend-design` skill for the visual design and the `frontend-ui-engineering` skill for the accessibility review.
 
 ## Credits
 
